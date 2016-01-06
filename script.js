@@ -57,6 +57,8 @@ function Enemy (x, y) {
   this.width = 50;
   this.height = 50;
   this.element = $('<div class="enemy">').appendTo($container);
+  this.isAttacking = false;
+  this.timeWhenAttackStarted = 0;
 }
 
 function Bullet (x, y) {
@@ -83,7 +85,9 @@ function setup () {
 
   // Spawn enemies
   enemies.push(new Enemy(100, 360));
+  enemies.push(new Enemy(210, 360));
   enemies.push(new Enemy(320, 360));
+  enemies.push(new Enemy(430, 360));
   enemies.push(new Enemy(540, 360));
 }
 
@@ -102,6 +106,11 @@ function update () {
     player.velocity.x = player.speed;
   } else {
     player.velocity.x = 0;
+  }
+
+  // Enemy attack movement
+  if (enemies.length) {
+    runEnemyAI(enemies);
   }
 
   // Amazing physics simulation
@@ -140,6 +149,34 @@ function update () {
       enemy.splice(j, 1);
     }
   }
+}
+
+// Enemy attack movement
+function runEnemyAI (enemies) {
+  var attackingEnemy;
+  // Find enemy that is currently attacking
+  enemies.forEach(function (enemy) {
+    if (enemy.isAttacking) {
+      attackingEnemy = enemy;
+    }
+  });
+  // Choose 1 enemy to attack the player, if none currently are
+  if (!attackingEnemy) {
+    attackingEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+    attackingEnemy.isAttacking = true;
+    attackingEnemy.timeWhenAttackStarted = Date.now();
+  }
+
+  var attackTime = Date.now() - attackingEnemy.timeWhenAttackStarted;
+  var epsilon = 0.3;
+  if (attackTime/540 > 2*Math.PI - epsilon) {
+    attackingEnemy.isAttacking = false;
+    attackingEnemy.velocity.x = 0;
+    attackingEnemy.velocity.y = 0;
+    return;
+  }
+  attackingEnemy.velocity.x = Math.sin(attackTime/180) * 5;
+  attackingEnemy.velocity.y = -Math.sin(attackTime/540)* 5;
 }
 
 // Rendering logic
