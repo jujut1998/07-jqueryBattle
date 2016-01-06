@@ -1,7 +1,7 @@
 // Key codes
 var CODES = {
   37: 'left',
-  38: 'up',
+  32: 'up',
   39: 'right',
   40: 'down'
 };
@@ -18,7 +18,8 @@ var pressed = {
 var cfg = {
   fps: 60,
   width: 640,
-  height: 480
+  height: 480,
+  isGameOver: false
 };
 
 var $container = $('#container');
@@ -38,9 +39,11 @@ function Player (x, y) {
     y: 0
   };
   this.speed = 5;
-  this.health = 3;
+  this.health = 10;
   this.width = 50;
   this.height = 50;
+  this.timeSinceLastShot = 0;
+  this.timeSinceLastDamaged = 0;
   this.element = $('<div class="player">').appendTo($container);
 }
 
@@ -95,8 +98,11 @@ function setup () {
 function update () {
 
   // Spawn bullet
-  if (pressed.up) {
+  var currentTime = Date.now();
+  var bulletDelay = 100;
+  if (pressed.up && currentTime - player.timeSinceLastShot > bulletDelay) {
     bullets.push(new Bullet(player.position.x, player.position.y + player.height));
+    player.timeSinceLastShot = currentTime;
   }
 
   // Left-right movement
@@ -122,7 +128,27 @@ function update () {
 
 
   // TODO: Collision detection & health adjustment
-
+  for (var i=0; i < bullets.length; i++) {
+    var bullet = bullets[i];
+    for (var j = 0; j < enemies.length; j++) {
+      var enemy = enemies[j];
+      if (isColliding(bullet, enemy)) {
+        enemy.health--;
+        bullet.health--;
+        break;
+      }
+    }
+  }
+  
+  var stunTime = 500;
+  if (currentTime - player.timeSinceLastDamaged > stunTime) {
+    for (var i=0; i < enemies.length; i++) {
+      var enemy = enemies[i];
+      if(isColliding(enemy, player)) {
+        player.health--;
+      }
+    }
+  }
 
   // Player bounds checking
   if (player.position.x < 0) {
@@ -130,8 +156,8 @@ function update () {
   } else if (player.position.x > cfg.width) {
     player.position.x = cfg.width;
   }
-
   // Bullet bounds/health checking
+  
   for (var i = bullets.length - 1; i >= 0; i--) {
     var bullet = bullets[i];
     // Remove bullet if dead or out of bounds
@@ -140,6 +166,8 @@ function update () {
       bullets.splice(i, 1);
     }
   }
+  var stunTime = 500;
+  // if (currentTime - player.timeSinceLastDamaged > stunTime) {
 
   // Enemy health checking
   for (var j = enemies.length - 1; j >= 0; j--) {
@@ -149,10 +177,36 @@ function update () {
       enemies.splice(j, 1);
     }
   }
-
   // TODO: Lose condition (i.e. if player is dead)
-
+  if (!cfg.isGameOver && player.health <= 0) {
+    player.element.remove();
+    cfg.isGameOver = true;
+    alert('YOU LOSE!!!');
+  }
   // TODO: Win condition (i.e. if all enemies are dead)
+  if (!cfg.isGameOver && enemies.length === 0) {
+    cfg.isGameOver = true;
+    alert('YOU WIN!!!');
+  }
+  
+}
+function isColliding (e1, e2) {
+    var e1left = e1.position.x - e1.width/2;
+    var e1right = e1.position.x + e1.width/2;
+    var e1top = e1.position.y + e1.height/2;
+    var e1bottom = e1.position.y - e1.height/2;
+    
+    var e2left = e2.position.x - e2.width/2;
+    var e2right = e2.position.x + e2.width/2;
+    var e2top = e2.position.y + e2.height/2;
+    var e2bottom = e2.position.y - e2.height/2;
+  
+    return !(
+      e1bottom > e2top ||
+      e1top < e2bottom ||
+      e1left > e2right ||
+      e1right < e2left
+    );
 }
 
 // Enemy attack movement
