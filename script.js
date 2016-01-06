@@ -121,7 +121,7 @@ function update () {
   });
 
 
-  // TODO: Collision detection
+  // TODO: Collision detection & health adjustment
 
 
   // Player bounds checking
@@ -149,6 +149,10 @@ function update () {
       enemy.splice(j, 1);
     }
   }
+
+  // TODO: Lose condition (i.e. if player is dead)
+
+  // TODO: Win condition (i.e. if all enemies are dead)
 }
 
 // Enemy attack movement
