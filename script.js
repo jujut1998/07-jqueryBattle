@@ -1,1 +1,180 @@
-console.log('hi');
+// Key codes
+var CODES = {
+  37: 'left',
+  38: 'up',
+  39: 'right',
+  40: 'down'
+};
+
+// Input state
+var pressed = {
+  left: false,
+  up: false,
+  right: false,
+  down: false
+};
+
+// Game configuration
+var cfg = {
+  fps: 60,
+  width: 640,
+  height: 480
+};
+
+var $container = $('#container');
+
+// Game entities
+var player;
+var enemies = [];
+var bullets = [];
+
+function Player (x, y) {
+  this.position = {
+    x: x,
+    y: y
+  };
+  this.velocity = {
+    x: 0,
+    y: 0
+  };
+  this.speed = 5;
+  this.health = 3;
+  this.width = 50;
+  this.height = 50;
+  this.element = $('<div class="player">').appendTo($container);
+}
+
+function Enemy (x, y) {
+  this.position = {
+    x: x,
+    y: y
+  };
+  this.velocity = {
+    x: 0,
+    y: 0
+  };
+  this.health = 1;
+  this.width = 50;
+  this.height = 50;
+  this.element = $('<div class="enemy">').appendTo($container);
+}
+
+function Bullet (x, y) {
+  this.position = {
+    x: x,
+    y: y
+  };
+  this.velocity = {
+    x: 0,
+    y: 10
+  };
+  this.health = 1;
+  this.width = 5;
+  this.height = 20;
+  this.element = $('<div class="bullet">').appendTo($container);
+}
+
+function setup () {
+  // Reset state
+  $container.empty();
+  player = new Player(320, 50);
+  enemies = [];
+  bullets = [];
+
+  // Spawn enemies
+  enemies.push(new Enemy(100, 360));
+  enemies.push(new Enemy(320, 360));
+  enemies.push(new Enemy(540, 360));
+}
+
+// Game logic
+function update () {
+
+  // Spawn bullet
+  if (pressed.up) {
+    bullets.push(new Bullet(player.position.x, player.position.y + player.height));
+  }
+
+  // Left-right movement
+  if (pressed.left) {
+    player.velocity.x = -player.speed;
+  } else if (pressed.right) {
+    player.velocity.x = player.speed;
+  } else {
+    player.velocity.x = 0;
+  }
+
+  // Amazing physics simulation
+  var entities = [player].concat(enemies, bullets);
+  entities.forEach(function(entity) {
+    entity.position.x += entity.velocity.x;
+    entity.position.y += entity.velocity.y;
+  });
+
+
+  // TODO: Collision detection
+
+
+  // Player bounds checking
+  if (player.position.x < 0) {
+    player.position.x = 0;
+  } else if (player.position.x > cfg.width) {
+    player.position.x = cfg.width;
+  }
+
+  // Bullet bounds/health checking
+  for (var i = bullets.length - 1; i >= 0; i--) {
+    var bullet = bullets[i];
+    // Remove bullet if dead or out of bounds
+    if (bullet.health <= 0 || bullet.position.y > cfg.height + bullet.height) {
+      bullet.element.remove();
+      bullets.splice(i, 1);
+    }
+  }
+
+  // Enemy health checking
+  for (var j = enemies.length - 1; j >= 0; j--) {
+    var enemy = enemies[j];
+    if (enemy.health <= 0) {
+      enemy.element.remove();
+      enemy.splice(j, 1);
+    }
+  }
+}
+
+// Rendering logic
+function draw () {
+  $container.width(cfg.width);
+  $container.height(cfg.height);
+
+  var entities = [player].concat(enemies, bullets);
+  entities.forEach(function (entity) {
+
+    entity.element.css({
+      height: entity.height,
+      width: entity.width,
+      left: entity.position.x,
+      bottom: entity.position.y
+    });
+  });
+}
+
+
+// Input handling
+$(document).bind('keydown keyup', function (evt) {
+  var direction = CODES[evt.which];
+
+  if (evt.type === 'keydown') {
+    pressed[direction] = true;
+  } else {
+    pressed[direction] = false;
+  }
+});
+
+setup();
+
+// Kick off the game loop
+setInterval(function () {
+  update();
+  draw();
+}, 1000/cfg.fps);
