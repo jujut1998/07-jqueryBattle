@@ -146,7 +146,7 @@ function update () {
     var enemy = enemies[j];
     if (enemy.health <= 0) {
       enemy.element.remove();
-      enemy.splice(j, 1);
+      enemies.splice(j, 1);
     }
   }
 
